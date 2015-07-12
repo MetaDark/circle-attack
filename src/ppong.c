@@ -10,6 +10,7 @@ static Layer *game_layer;
 
 enum {
   GAME_ACTIVE,
+  GAME_PAUSED,
   GAME_OVER
 } game_state = GAME_ACTIVE;
 
@@ -45,23 +46,21 @@ static int object_collides_rect(Object *object, GRect *rect) {
   return collidesX && collidesY;
 }
 
-typedef struct Player {
+// Singleton for simplicity
+struct {
   int health;
-  int points;
   Object obj;
-} Player;
+} player;
 
-// Make player singleton for simplicity
-static Player player = {
-  .health = 100,
-  .obj = {
-    .x_pos = 0,
-    .y_pos = 84,
-    .x_vel = 0,
-    .y_vel = 0,
-    .size = 20
+static void player_update() {
+  object_update(&player.obj);
+
+  if (player.obj.y_pos < 0) {
+    player.obj.y_pos = 0;
+  } else if (player.obj.y_pos > 144) {
+    player.obj.y_pos = 144;
   }
-};
+}
 
 static void player_draw(GContext *ctx) {
   // Draw the three circles
@@ -83,10 +82,11 @@ static void player_draw(GContext *ctx) {
 }
 
 static void player_health_update(int delta) {
+  /* player.health = 0; */
   player.health += delta;
 
   if (player.health <= 0) {
-    player.health = 50;
+    game_state = GAME_OVER;
   }
 }
 
@@ -111,32 +111,22 @@ static void player_health_draw(GContext *ctx) {
   }, 0, GCornerNone);
 }
 
-typedef struct Points {
+// Singleton for simplicity
+struct {
   int points;
   char text[15];
   TextLayer *text_layer;
-} Points;
+} points;
 
-static Points points;
 static void points_update(int delta) {
-  player.points += delta;
-  snprintf(points.text, ARRAYSIZE(points.text), "Points: %i", player.points);
+  points.points += delta;
+  snprintf(points.text, ARRAYSIZE(points.text), "Points: %i", points.points);
 }
 
-typedef struct Bullet {
+// Singleton for simplicity
+struct Bullet {
   Object obj;
-} Bullet;
-
-// Make bullet singleton for simplicity
-static Bullet bullet = {
-  .obj = {
-    .x_pos = -10,
-    .y_pos = 0,
-    .x_vel = 0,
-    .y_vel = 0,
-    .size = 5
-  }
-};
+} bullet;
 
 static void bullet_respawn(int x_pos, int y_pos, int x_vel, int y_vel) {
   bullet.obj.x_pos = x_pos;
@@ -163,56 +153,45 @@ static void bullet_draw(GContext *ctx) {
   graphics_fill_circle(ctx, GPoint(bullet.obj.x_pos, bullet.obj.y_pos), bullet.obj.size);
 }
 
-typedef struct Opponent {
+// Singleton for simplicity
+struct Opponent {
   int dying;
   Object obj;
  #ifdef PBL_COLOR
   GColor color;
  #endif
-} Opponent;
-
-// Make opponent singleton for simplicity
-static Opponent opponent = {
-  .dying = 0,
-  .obj = {
-    .x_pos = -10,
-    .y_pos = 0,
-    .x_vel = 0,
-    .y_vel = 0,
-    .size = 10
-  }
-};
+} opponent;
 
 static void opponent_respawn() {
   opponent.dying = 0;
   opponent.obj.x_pos = 168;
-  opponent.obj.y_pos = rand() % 144 - 20;
+  opponent.obj.y_pos = rand() % 144 + 15;
   opponent.obj.x_vel = -(rand() % 4 + 1);
   opponent.obj.y_vel = 0;
   opponent.obj.size = rand() % 25 + 5;
  #ifdef PBL_COLOR
-  opponent.color = GColorFromRGB(rand() % 223 + 32, rand() % 223 + 32, rand() % 223 + 32);
+  opponent.color = GColorFromRGB(rand() % 191 + 32, rand() % 191 + 32, rand() % 191 + 32);
  #endif
 }
 
 static void opponent_kill() {
-/*   opponent.dying = 1; */
-/* } */
+  opponent.dying = 1;
+}
 
-/* static void opponent_update(GContext *ctx) { */
-/*   if (opponent.dying) { */
-/*     opponent.obj.size -= 1; */
-/*     if (opponent.obj.size <= 0) { */
-/*       opponent_respawn(); */
-/*     } */
-/*   } else { */
-/*     object_update(&opponent.obj); */
-/*   } */
-/* } */
+static void opponent_update() {
+  if (opponent.dying) {
+    opponent.obj.size -= opponent.obj.size / 2 + 1;
+    if (opponent.obj.size <= 0) {
+      opponent_respawn();
+    }
+  } else {
+    object_update(&opponent.obj);
+  }
+}
 
-/* static void opponent_draw(GContext *ctx) { */
-/*  #ifdef PBL_COLOR */
-/*   graphics_context_set_fill_color(ctx, opponent.color); */
+static void opponent_draw(GContext *ctx) {
+ #ifdef PBL_COLOR
+  graphics_context_set_fill_color(ctx, opponent.color);
  #else
   graphics_context_set_fill_color(ctx, GColorWhite);
  #endif
@@ -226,16 +205,31 @@ static void opponent_kill() {
   graphics_fill_circle(ctx, GPoint(opponent.obj.x_pos, opponent.obj.y_pos), opponent.obj.size / 4);
 }
 
-static void background_update() {
-
+static void click_back_handler(ClickRecognizerRef recognizer, void *ctx) {
+  switch (game_state) {
+  case GAME_ACTIVE:
+    game_state = GAME_PAUSED;
+    break;
+  case GAME_PAUSED:
+    game_state = GAME_ACTIVE;
+    break;
+  case GAME_OVER:
+    window_stack_pop(true);
+    break;
+  }
 }
 
-static void background_draw(GContext *ctx) {
-
-}
-
+static void game_init();
 static void start_select_handler(ClickRecognizerRef recognizer, void *ctx) {
-  bullet_respawn(player.obj.x_pos + player.obj.size, player.obj.y_pos, 10, 0);
+  switch (game_state) {
+  case GAME_ACTIVE:
+    bullet_respawn(player.obj.x_pos + player.obj.size, player.obj.y_pos, 10, 0);
+    break;
+  case GAME_PAUSED:
+  case GAME_OVER:
+    game_init();
+    break;
+  }
 }
 
 static void start_up_handler(ClickRecognizerRef recognizer, void *ctx) {
@@ -255,18 +249,11 @@ static void end_down_handler(ClickRecognizerRef recognizer, void *ctx) {
 }
 
 static void game_layer_update_callback(Layer *layer, GContext *ctx) {
-  if (game_state == GAME_ACTIVE) {
-    background_update();
-    background_draw(ctx);
-
+  switch (game_state) {
+  case GAME_ACTIVE:
     player_update();
-    player_draw(ctx);
-
     opponent_update();
-    opponent_draw(ctx);
-
     bullet_update();
-    bullet_draw(ctx);
 
     if (object_collides(&bullet.obj, &opponent.obj)) {
       points_update(1);
@@ -287,17 +274,20 @@ static void game_layer_update_callback(Layer *layer, GContext *ctx) {
       vibes_short_pulse();
     }
 
+    player_draw(ctx);
+    opponent_draw(ctx);
+    bullet_draw(ctx);
     player_health_draw(ctx);
-  } else {
-
+    break;
+  case GAME_PAUSED:
+    break;
+  case GAME_OVER:
+    break;
   }
 }
 
-static void game_layer_gameover() {
-
-}
-
 static void click_config_provider(void *ctx) {
+  window_single_click_subscribe(BUTTON_ID_BACK, click_back_handler);
   window_raw_click_subscribe(BUTTON_ID_SELECT, start_select_handler, NULL, NULL);
   window_raw_click_subscribe(BUTTON_ID_UP, start_up_handler, end_up_handler, NULL);
   window_raw_click_subscribe(BUTTON_ID_DOWN, start_down_handler, end_down_handler, NULL);
@@ -305,7 +295,33 @@ static void click_config_provider(void *ctx) {
 
 static void timer_callback(void *data) {
   layer_mark_dirty(game_layer);
-  app_timer_register(1000 / 30, timer_callback, NULL);
+  switch (game_state) {
+  case GAME_ACTIVE:
+  case GAME_PAUSED:
+    app_timer_register(1000 / 30, timer_callback, NULL);
+    break;
+  case GAME_OVER:
+    break;
+  }
+}
+
+static void game_init() {
+  player.health = 100;
+  player.obj.x_pos = 0,
+  player.obj.y_pos = 84,
+  player.obj.x_vel = 0,
+  player.obj.y_vel = 0,
+  player.obj.size = 20;
+
+  opponent_respawn();
+
+  bullet.obj.size = 5;
+  bullet_hide();
+
+  points.points = 0;
+  points_update(0);
+
+  timer_callback(NULL);
 }
 
 static void main_window_load(Window *window) {
@@ -318,6 +334,7 @@ static void main_window_load(Window *window) {
  /*  window_set_fullscreen(window, true); */
  /* #endif */
 
+  // Initialize the game layer
   game_layer = layer_create((GRect) {
       .origin = { 0, 0 },
       .size = { bounds.size.w, bounds.size.h }
@@ -325,18 +342,17 @@ static void main_window_load(Window *window) {
   layer_set_update_proc(game_layer, game_layer_update_callback);
   layer_add_child(window_layer, game_layer);
 
-  points.points = 0;
+  // Initialize the points text layer
   points.text_layer = text_layer_create((GRect) {
       .origin = { 0, bounds.size.h - 20 },
       .size = { bounds.size.w, 20 }
   });
-  points_update(0);
   text_layer_set_text(points.text_layer, points.text);
   text_layer_set_text_alignment(points.text_layer, GTextAlignmentCenter);
+  text_layer_set_background_color(points.text_layer, GColorWindsorTan);
   layer_add_child(game_layer, text_layer_get_layer(points.text_layer));
 
-  opponent_respawn();
-  timer_callback(NULL);
+  game_init();
 }
 
 static void main_window_unload(Window *window) {
