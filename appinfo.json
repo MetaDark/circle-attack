@@ -1,0 +1,18 @@
+{
+  "uuid": "a8b179be-32ab-4608-ac61-d354d069fa7e",
+  "shortName": "circle-attack",
+  "longName": "circle-attack",
+  "companyName": "MetaDark",
+  "versionLabel": "1.0",
+  "sdkVersion": "3",
+  "targetPlatforms": ["aplite", "basalt"],
+  "watchapp": {
+    "watchface": false
+  },
+  "appKeys": {
+    "dummy": 0
+  },
+  "resources": {
+    "media": []
+  }
+}
