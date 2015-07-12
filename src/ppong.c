@@ -5,14 +5,49 @@
 
 #define ARRAYSIZE(x) (sizeof(x)/sizeof(*x))
 
-static Window *window;
-static Layer *game_layer;
-
 enum {
   GAME_ACTIVE,
   GAME_PAUSED,
   GAME_OVER
 } game_state = GAME_ACTIVE;
+
+static Window *window;
+static Layer *game_layer;
+
+static void game_pause();
+static void game_unpause();
+static void game_over();
+static void game_quit();
+
+TextLayer *overlay_text_layer;
+
+static void overlay_open(const char * text) {
+  GRect game_bounds = layer_get_bounds(game_layer);
+
+  overlay_text_layer = text_layer_create((GRect) {
+      .origin = { 0, game_bounds.size.h / 2 - 20 },
+      .size = { game_bounds.size.w, 20 }
+  });
+
+  text_layer_set_text(overlay_text_layer, text);
+  text_layer_set_text_alignment(overlay_text_layer, GTextAlignmentCenter);
+
+#ifdef PBL_COLOR
+  text_layer_set_text_color(overlay_text_layer, GColorWhite);
+  text_layer_set_background_color(overlay_text_layer, GColorDarkCandyAppleRed);
+#else
+  text_layer_set_text_color(overlay_text_layer, GColorBlack);
+  text_layer_set_background_color(overlay_text_layer, GColorWhite);
+#endif
+
+  layer_add_child(game_layer, text_layer_get_layer(overlay_text_layer));
+}
+
+static void overlay_close() {
+  if (overlay_text_layer) {
+    text_layer_destroy(overlay_text_layer);
+  }
+}
 
 typedef struct Object {
   int x_pos;
@@ -82,11 +117,10 @@ static void player_draw(GContext *ctx) {
 }
 
 static void player_health_update(int delta) {
-  /* player.health = 0; */
   player.health += delta;
 
   if (player.health <= 0) {
-    game_state = GAME_OVER;
+    game_over();
   }
 }
 
@@ -208,10 +242,10 @@ static void opponent_draw(GContext *ctx) {
 static void click_back_handler(ClickRecognizerRef recognizer, void *ctx) {
   switch (game_state) {
   case GAME_ACTIVE:
-    game_state = GAME_PAUSED;
+    game_pause();
     break;
   case GAME_PAUSED:
-    game_state = GAME_ACTIVE;
+    game_unpause();
     break;
   case GAME_OVER:
     window_stack_pop(true);
@@ -306,6 +340,10 @@ static void timer_callback(void *data) {
 }
 
 static void game_init() {
+  game_state = GAME_ACTIVE;
+
+  overlay_close();
+
   player.health = 100;
   player.obj.x_pos = 0,
   player.obj.y_pos = 84,
@@ -324,39 +362,51 @@ static void game_init() {
   timer_callback(NULL);
 }
 
+static void game_over() {
+  game_state = GAME_OVER;
+  overlay_open("GAME OVER");
+}
+
+static void game_pause() {
+  game_state = GAME_PAUSED;
+  overlay_open("PAUSED");
+}
+
+static void game_unpause() {
+  game_state = GAME_ACTIVE;
+  overlay_close();
+}
+
 static void main_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
-
-  GRect bounds = layer_get_bounds(window_layer);
-  GRect frame = layer_get_frame(window_layer);
 
  /* #ifdef PBL_PLATFORM_APLITE */
  /*  window_set_fullscreen(window, true); */
  /* #endif */
 
   // Initialize the game layer
-  game_layer = layer_create((GRect) {
-      .origin = { 0, 0 },
-      .size = { bounds.size.w, bounds.size.h }
-  });
+  game_layer = layer_create(layer_get_frame(window_layer));
   layer_set_update_proc(game_layer, game_layer_update_callback);
   layer_add_child(window_layer, game_layer);
 
+  GRect game_bounds = layer_get_bounds(game_layer);
+
   // Initialize the points text layer
   points.text_layer = text_layer_create((GRect) {
-      .origin = { 0, bounds.size.h - 20 },
-      .size = { bounds.size.w, 20 }
+      .origin = { 0, game_bounds.size.h - 20 },
+      .size = { game_bounds.size.w, 20 }
   });
   text_layer_set_text(points.text_layer, points.text);
   text_layer_set_text_alignment(points.text_layer, GTextAlignmentCenter);
   text_layer_set_background_color(points.text_layer, GColorWindsorTan);
-  layer_add_child(game_layer, text_layer_get_layer(points.text_layer));
+  layer_add_child(window_layer, text_layer_get_layer(points.text_layer));
 
   game_init();
 }
 
 static void main_window_unload(Window *window) {
   text_layer_destroy(points.text_layer);
+  overlay_close();
   layer_destroy(game_layer);
 }
 
