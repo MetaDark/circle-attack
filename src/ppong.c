@@ -245,8 +245,6 @@ static void click_back_handler(ClickRecognizerRef recognizer, void *ctx) {
     game_pause();
     break;
   case GAME_PAUSED:
-    game_unpause();
-    break;
   case GAME_OVER:
     window_stack_pop(true);
     break;
@@ -260,6 +258,8 @@ static void start_select_handler(ClickRecognizerRef recognizer, void *ctx) {
     bullet_respawn(player.obj.x_pos + player.obj.size, player.obj.y_pos, 10, 0);
     break;
   case GAME_PAUSED:
+    game_unpause();
+    break;
   case GAME_OVER:
     game_init();
     break;
@@ -329,6 +329,7 @@ static void click_config_provider(void *ctx) {
 
 static void timer_callback(void *data) {
   layer_mark_dirty(game_layer);
+
   switch (game_state) {
   case GAME_ACTIVE:
   case GAME_PAUSED:
