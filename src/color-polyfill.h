@@ -27,4 +27,8 @@
 #define GColorChromeYellow GColorWhite
 #endif
 
+#ifndef GColorPastelYellow
+#define GColorPastelYellow GColorWhite
+#endif
+
 #endif

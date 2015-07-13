@@ -398,6 +398,7 @@ static void main_window_load(Window *window) {
   });
   text_layer_set_text(points.text_layer, points.text);
   text_layer_set_text_alignment(points.text_layer, GTextAlignmentCenter);
+  text_layer_set_text_color(points.text_layer, GColorWhite);
   text_layer_set_background_color(points.text_layer, GColorWindsorTan);
   layer_add_child(window_layer, text_layer_get_layer(points.text_layer));
 
