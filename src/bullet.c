@@ -1,5 +1,11 @@
 #include "bullet.h"
 
+void bullet_init(Bullet *this, Layer *layer) {
+  object_init(&this->obj, layer);
+  this->obj.size = 5;
+  bullet_hide(this);
+}
+
 void bullet_respawn(Bullet *this, int x_pos, int y_pos, int x_vel, int y_vel) {
   this->obj.x_pos = x_pos;
   this->obj.y_pos = y_pos;
@@ -14,11 +20,11 @@ void bullet_hide(Bullet *this) {
 void bullet_update(Bullet *this) {
   object_update(&this->obj);
 
-  // HACK
   // Stop and hide the bullet when it goes off the screen
-  /* if (bullet.obj.x_pos - bullet.obj.size > 144) { */
-  /*   bullet_hide(); */
-  /* } */
+  GRect bounds = layer_get_bounds(this->obj.layer);
+  if (!object_collides_rect(&this->obj, bounds)) {
+    bullet_hide(this);
+  }
 }
 
 void bullet_draw(Bullet *this, GContext *ctx) {

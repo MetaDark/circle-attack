@@ -11,6 +11,7 @@ typedef struct Opponent {
 #endif
 } Opponent;
 
+void opponent_init(Opponent *this, Layer *layer);
 void opponent_respawn(Opponent *this);
 void opponent_kill(Opponent *this);
 void opponent_update(Opponent *this);

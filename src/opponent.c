@@ -1,9 +1,15 @@
 #include "opponent.h"
 
+void opponent_init(Opponent *this, Layer *layer) {
+  object_init(&this->obj, layer);
+  opponent_respawn(this);
+}
+
 void opponent_respawn(Opponent *this) {
+  GRect bounds = layer_get_bounds(this->obj.layer);
   this->dying = 0;
-  this->obj.x_pos = 168;
-  this->obj.y_pos = rand() % 144 + 15;
+  this->obj.x_pos = bounds.size.w + 24;
+  this->obj.y_pos = rand() % bounds.size.h;
   this->obj.x_vel = -(rand() % 4 + 1);
   this->obj.y_vel = 0;
   this->obj.size = rand() % 25 + 5;

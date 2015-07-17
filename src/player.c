@@ -2,15 +2,21 @@
 
 #include "color-polyfill.h"
 
+void player_init(Player *this, Layer *layer) {
+  object_init(&this->obj, layer);
+  this->health = 100;
+  this->obj.x_pos = 0;
+  this->obj.y_pos = 84;
+  this->obj.x_vel = 0;
+  this->obj.y_vel = 0;
+  this->obj.size = 20;
+}
+
 void player_update(Player *this) {
   object_update(&this->obj);
 
-  // HACK:
-  /* if (this->obj.y_pos < 0) { */
-  /*   this->obj.y_pos = 0; */
-  /* } else if (this->obj.y_pos > 144) { */
-  /*   this->obj.y_pos = 144; */
-  /* } */
+  GRect bounds = layer_get_bounds(this->obj.layer);
+  object_retain_rect(&this->obj, bounds);
 }
 
 void player_draw(Player *this, GContext *ctx) {
@@ -28,8 +34,8 @@ void player_draw(Player *this, GContext *ctx) {
   graphics_context_set_fill_color(ctx, GColorPictonBlue);
   graphics_fill_rect(ctx, (GRect) {
       .origin = { this->obj.x_pos + this->obj.size, this->obj.y_pos - 5 },
-        .size = { 5, 10 }
-    }, 0, GCornerNone);
+      .size = { 5, 10 }
+  }, 0, GCornerNone);
 }
 
 void player_health_update(Player *this, int delta) {

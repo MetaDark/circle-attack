@@ -12,9 +12,10 @@ typedef struct Object {
   int size;
 } Object;
 
-/* void object_init(Object *this, Layer *layer); */
+void object_init(Object *this, Layer *layer);
 void object_update(Object *this);
 int object_collides(Object *this, Object *object);
-/* int object_collides_rect(Object *object, GRect *rect); */
+int object_collides_rect(Object *this, GRect rect);
+void object_retain_rect(Object *this, GRect rect);
 
 #endif

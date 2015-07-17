@@ -10,6 +10,7 @@ typedef struct Player {
 
 #include "player.h"
 
+void player_init(Player *this, Layer *layer);
 void player_update(Player *this);
 void player_draw(Player *this, GContext *ctx);
 void player_health_update(Player *this, int delta);

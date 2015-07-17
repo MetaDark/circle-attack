@@ -168,23 +168,14 @@ static void timer_callback(void *data) {
   }
 }
 
-static void game_init() {
+static void game_init(Layer *layer) {
   game_state = GAME_ACTIVE;
 
+  player_init(&player, layer);
+  opponent_init(&opponent, layer);
+  bullet_init(&bullet, layer);
+
   overlay_close();
-
-  player.health = 100;
-  player.obj.x_pos = 0,
-  player.obj.y_pos = 84,
-  player.obj.x_vel = 0,
-  player.obj.y_vel = 0,
-  player.obj.size = 20;
-
-  opponent_respawn(&opponent);
-
-  bullet.obj.size = 5;
-  bullet_hide(&bullet);
-
   points.points = 0;
   points_update(0);
 
@@ -208,9 +199,13 @@ static void game_unpause() {
 
 static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
+  GRect window_bounds = layer_get_bounds(window_layer);
 
   // Initialize the render layer
-  render_layer = layer_create(layer_get_frame(window_layer));
+  render_layer = layer_create((GRect) {
+      .origin = { 10, 10 },
+      .size = { window_bounds.size.w - 20, window_bounds.size.h - 20 }
+  });
   layer_set_update_proc(render_layer, render_layer_update_callback);
   layer_add_child(window_layer, render_layer);
 
@@ -218,8 +213,8 @@ static void window_load(Window *window) {
 
   // Initialize the points text layer
   points.text_layer = text_layer_create((GRect) {
-      .origin = { 0, game_bounds.size.h - 20 },
-      .size = { game_bounds.size.w, 20 }
+      .origin = { 0, window_bounds.size.h - 20 },
+      .size = { window_bounds.size.w, 20 }
   });
   text_layer_set_text(points.text_layer, points.text);
   text_layer_set_text_alignment(points.text_layer, GTextAlignmentCenter);
@@ -234,7 +229,7 @@ static void window_load(Window *window) {
 
   layer_add_child(window_layer, text_layer_get_layer(points.text_layer));
 
-  game_init();
+  game_init(window_layer);
 }
 
 static void window_unload(Window *window) {
