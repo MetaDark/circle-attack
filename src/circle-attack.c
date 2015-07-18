@@ -1,12 +1,13 @@
 #include <pebble.h>
 #include <stdio.h>
 
+#include "utils.h"
+
 #include "player.h"
 #include "opponent.h"
 #include "bullet.h"
 #include "overlay.h"
 
-#define ARRAYSIZE(x) (sizeof(x)/sizeof(*x))
 #define BACKGROUND_COLOR GColorBlack
 
 enum {
@@ -202,8 +203,6 @@ static void window_load(Window *window) {
   });
   layer_set_update_proc(render_layer, render_layer_update_callback);
   layer_add_child(window_layer, render_layer);
-
-  GRect game_bounds = layer_get_bounds(render_layer);
 
   // Initialize the points text layer
   points.text_layer = text_layer_create((GRect) {
