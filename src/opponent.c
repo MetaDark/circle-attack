@@ -5,7 +5,6 @@ void opponent_init(Opponent *this) {
 }
 
 void opponent_respawn(Opponent *this) {
-  /* GRect bounds = layer_get_bounds(this->obj.layer); */
   this->dying = 0;
   this->obj.x_pos = 144 + 24;
   this->obj.y_pos = rand() % 144 - 20;
@@ -13,7 +12,6 @@ void opponent_respawn(Opponent *this) {
   this->obj.y_vel = 0;
   this->obj.size = rand() % 25 + 5;
 #ifdef PBL_COLOR
-  // 85 - 170 % 1 << 24
   this->color = GColorFromRGB(rand() % 191 + 32, rand() % 191 + 32, rand() % 191 + 32);
 #endif
 }

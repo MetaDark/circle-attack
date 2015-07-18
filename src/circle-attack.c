@@ -23,10 +23,6 @@ static Bullet bullet;
 
 TextLayer *overlay_text_layer;
 
-static void game_pause();
-static void game_unpause();
-static void game_over();
-
 static void overlay_open(const char * text) {
   GRect game_bounds = layer_get_bounds(render_layer);
 

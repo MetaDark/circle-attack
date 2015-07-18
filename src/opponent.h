@@ -4,8 +4,8 @@
 #include "object.h"
 
 typedef struct Opponent {
-  int dying;
   Object obj;
+  int dying;
 #ifdef PBL_COLOR
   GColor8 color;
 #endif
