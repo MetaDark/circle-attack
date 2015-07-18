@@ -21,11 +21,11 @@ static Player player;
 static Opponent opponent;
 static Bullet bullet;
 
+TextLayer *overlay_text_layer;
+
 static void game_pause();
 static void game_unpause();
 static void game_over();
-
-TextLayer *overlay_text_layer;
 
 static void overlay_open(const char * text) {
   GRect game_bounds = layer_get_bounds(render_layer);
@@ -67,6 +67,112 @@ static void points_update(int delta) {
   snprintf(points.text, ARRAYSIZE(points.text), "Points: %i", points.points);
 }
 
+static void timer_callback(void *data) {
+  layer_mark_dirty(render_layer);
+
+  switch (game_state) {
+  case GAME_ACTIVE:
+    app_timer_register(1000 / 30, timer_callback, NULL);
+    break;
+  case GAME_PAUSED:
+    break;
+  case GAME_OVER:
+    break;
+  }
+}
+
+static void game_init() {
+  game_state = GAME_ACTIVE;
+
+  player_init(&player);
+  opponent_init(&opponent);
+  bullet_init(&bullet);
+
+  overlay_close();
+  points.points = 0;
+  points_update(0);
+
+  timer_callback(NULL);
+}
+
+static void game_over() {
+  game_state = GAME_OVER;
+  overlay_open("GAME OVER");
+}
+
+static void game_pause() {
+  game_state = GAME_PAUSED;
+  overlay_open("PAUSED");
+}
+
+static void game_unpause() {
+  game_state = GAME_ACTIVE;
+  overlay_close();
+}
+
+static void game_update(Layer *layer, GContext *ctx) {
+  GRect bounds = layer_get_bounds(layer);
+
+  // Update positions of objects
+  player_update(&player);
+  opponent_update(&opponent);
+  bullet_update(&bullet);
+
+  // Keep the player within the screen
+  object_lock_rect(&player.obj, bounds);
+
+  // Opponent passes through left side of screen
+  if (opponent.obj.x_pos + opponent.obj.size < 0) {
+    points_update(-1);
+    opponent_respawn(&opponent);
+    vibes_short_pulse();
+  }
+
+  // Opponent hits player
+  if (object_collides(&player.obj, &opponent.obj)) {
+    player_health_update(&player, -opponent.obj.size);
+    opponent_kill(&opponent);
+    vibes_short_pulse();
+  }
+
+  // Bullet hits opponent
+  if (object_collides(&bullet.obj, &opponent.obj)) {
+    points_update(1);
+    bullet_hide(&bullet);
+    opponent_kill(&opponent);
+  }
+
+  // Bullet goes off the screen
+  if (!object_collides_rect(&bullet.obj, bounds)) {
+    bullet_hide(&bullet);
+  }
+
+  // Player looses all health
+  if (player.health <= 0) {
+    game_over();
+  }
+
+  // Draw objects
+  player_draw(&player, layer, ctx);
+  opponent_draw(&opponent, layer, ctx);
+  bullet_draw(&bullet, layer, ctx);
+
+  // Draw static UI
+  player_health_draw(&player, layer, ctx);
+}
+
+static void render_layer_update_callback(Layer *layer, GContext *ctx) {
+  switch (game_state) {
+  case GAME_ACTIVE:
+    game_update(layer, ctx);
+    break;
+  case GAME_PAUSED:
+    break;
+  case GAME_OVER:
+    break;
+  }
+}
+
 static void click_back_handler(ClickRecognizerRef recognizer, void *ctx) {
   switch (game_state) {
   case GAME_ACTIVE:
@@ -79,7 +185,6 @@ static void click_back_handler(ClickRecognizerRef recognizer, void *ctx) {
   }
 }
 
-static void game_init();
 static void start_select_handler(ClickRecognizerRef recognizer, void *ctx) {
   switch (game_state) {
   case GAME_ACTIVE:
@@ -110,91 +215,11 @@ static void end_down_handler(ClickRecognizerRef recognizer, void *ctx) {
   player.obj.y_vel = 0;
 }
 
-static void render_layer_update_callback(Layer *layer, GContext *ctx) {
-  switch (game_state) {
-  case GAME_ACTIVE:
-    player_update(&player);
-    opponent_update(&opponent);
-    bullet_update(&bullet);
-
-    if (object_collides(&bullet.obj, &opponent.obj)) {
-      points_update(1);
-      bullet_hide(&bullet);
-      opponent_kill(&opponent);
-    }
-
-    // Opponent passes screen boundary
-    if (opponent.obj.x_pos + opponent.obj.size < 0) {
-      points_update(-1);
-      opponent_respawn(&opponent);
-      vibes_short_pulse();
-    }
-
-    if (object_collides(&player.obj, &opponent.obj)) {
-      player_health_update(&player, -opponent.obj.size);
-      opponent_kill(&opponent);
-      vibes_short_pulse();
-    }
-
-    player_draw(&player, ctx);
-    opponent_draw(&opponent, ctx);
-    bullet_draw(&bullet, ctx);
-    player_health_draw(&player, ctx);
-    break;
-  case GAME_PAUSED:
-    break;
-  case GAME_OVER:
-    break;
-  }
-}
-
 static void click_config_provider(void *ctx) {
   window_single_click_subscribe(BUTTON_ID_BACK, click_back_handler);
   window_raw_click_subscribe(BUTTON_ID_SELECT, start_select_handler, NULL, NULL);
   window_raw_click_subscribe(BUTTON_ID_UP, start_up_handler, end_up_handler, NULL);
   window_raw_click_subscribe(BUTTON_ID_DOWN, start_down_handler, end_down_handler, NULL);
-}
-
-static void timer_callback(void *data) {
-  layer_mark_dirty(render_layer);
-
-  switch (game_state) {
-  case GAME_ACTIVE:
-  case GAME_PAUSED:
-    app_timer_register(1000 / 30, timer_callback, NULL);
-    break;
-  case GAME_OVER:
-    break;
-  }
-}
-
-static void game_init(Layer *layer) {
-  game_state = GAME_ACTIVE;
-
-  player_init(&player, layer);
-  opponent_init(&opponent, layer);
-  bullet_init(&bullet, layer);
-
-  overlay_close();
-  points.points = 0;
-  points_update(0);
-
-  timer_callback(NULL);
-}
-
-static void game_over() {
-  game_state = GAME_OVER;
-  overlay_open("GAME OVER");
-}
-
-static void game_pause() {
-  game_state = GAME_PAUSED;
-  overlay_open("PAUSED");
-}
-
-static void game_unpause() {
-  game_state = GAME_ACTIVE;
-  overlay_close();
 }
 
 static void window_load(Window *window) {
@@ -203,8 +228,8 @@ static void window_load(Window *window) {
 
   // Initialize the render layer
   render_layer = layer_create((GRect) {
-      .origin = { 10, 10 },
-      .size = { window_bounds.size.w - 20, window_bounds.size.h - 20 }
+      .origin = { 5, 5 },
+      .size = { window_bounds.size.w - 10, window_bounds.size.h - 30 }
   });
   layer_set_update_proc(render_layer, render_layer_update_callback);
   layer_add_child(window_layer, render_layer);
@@ -229,12 +254,12 @@ static void window_load(Window *window) {
 
   layer_add_child(window_layer, text_layer_get_layer(points.text_layer));
 
-  game_init(window_layer);
+  game_init();
 }
 
 static void window_unload(Window *window) {
-  text_layer_destroy(points.text_layer);
   overlay_close();
+  text_layer_destroy(points.text_layer);
   layer_destroy(render_layer);
 }
 

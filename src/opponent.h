@@ -7,14 +7,14 @@ typedef struct Opponent {
   int dying;
   Object obj;
 #ifdef PBL_COLOR
-  GColor color;
+  GColor8 color;
 #endif
 } Opponent;
 
-void opponent_init(Opponent *this, Layer *layer);
+void opponent_init(Opponent *this);
 void opponent_respawn(Opponent *this);
 void opponent_kill(Opponent *this);
 void opponent_update(Opponent *this);
-void opponent_draw(Opponent *this, GContext *ctx);
+void opponent_draw(Opponent *this, Layer *layer, GContext *ctx);
 
 #endif

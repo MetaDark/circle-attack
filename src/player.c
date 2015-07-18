@@ -2,8 +2,7 @@
 
 #include "color-polyfill.h"
 
-void player_init(Player *this, Layer *layer) {
-  object_init(&this->obj, layer);
+void player_init(Player *this) {
   this->health = 100;
   this->obj.x_pos = 0;
   this->obj.y_pos = 84;
@@ -14,12 +13,9 @@ void player_init(Player *this, Layer *layer) {
 
 void player_update(Player *this) {
   object_update(&this->obj);
-
-  GRect bounds = layer_get_bounds(this->obj.layer);
-  object_retain_rect(&this->obj, bounds);
 }
 
-void player_draw(Player *this, GContext *ctx) {
+void player_draw(Player *this, Layer *layer, GContext *ctx) {
   // Draw the three circles
   graphics_context_set_fill_color(ctx, GColorPictonBlue);
   graphics_fill_circle(ctx, GPoint(this->obj.x_pos, this->obj.y_pos), this->obj.size);
@@ -40,19 +36,16 @@ void player_draw(Player *this, GContext *ctx) {
 
 void player_health_update(Player *this, int delta) {
   this->health += delta;
-
-  // HACK:
-  /* if (this->health <= 0) { */
-  /*   game_over(); */
-  /* } */
 }
 
-void player_health_draw(Player *this, GContext *ctx) {
+void player_health_draw(Player *this, Layer *layer, GContext *ctx) {
+  GRect bounds = layer_get_bounds(layer);
+
   graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_fill_rect(ctx, (GRect) {
       .origin = { 4, 4 },
-        .size = { (this->health * 144 / 100) - 8, 12}
-    }, 0, GCornerNone);
+      .size = { bounds.size.w - 8, 12}
+  }, 0, GCornerNone);
 
   if (this->health > 66) {
     graphics_context_set_fill_color(ctx, GColorIslamicGreen);
@@ -64,6 +57,6 @@ void player_health_draw(Player *this, GContext *ctx) {
 
   graphics_fill_rect(ctx, (GRect) {
       .origin = { 5, 5 },
-        .size = { (this->health * 144 / 100) - 10, 10 }
-    }, 0, GCornerNone);
+      .size = { (this->health * bounds.size.w / 100) - 10, 10 }
+   }, 0, GCornerNone);
 }

@@ -4,7 +4,6 @@
 #include "pebble.h"
 
 typedef struct Object {
-  Layer *layer;
   int x_pos;
   int y_pos;
   int x_vel;
@@ -12,10 +11,9 @@ typedef struct Object {
   int size;
 } Object;
 
-void object_init(Object *this, Layer *layer);
 void object_update(Object *this);
 int object_collides(Object *this, Object *object);
 int object_collides_rect(Object *this, GRect rect);
-void object_retain_rect(Object *this, GRect rect);
+void object_lock_rect(Object *this, GRect rect);
 
 #endif

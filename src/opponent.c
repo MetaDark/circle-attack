@@ -1,19 +1,19 @@
 #include "opponent.h"
 
-void opponent_init(Opponent *this, Layer *layer) {
-  object_init(&this->obj, layer);
+void opponent_init(Opponent *this) {
   opponent_respawn(this);
 }
 
 void opponent_respawn(Opponent *this) {
-  GRect bounds = layer_get_bounds(this->obj.layer);
+  /* GRect bounds = layer_get_bounds(this->obj.layer); */
   this->dying = 0;
-  this->obj.x_pos = bounds.size.w + 24;
-  this->obj.y_pos = rand() % bounds.size.h;
+  this->obj.x_pos = 144 + 24;
+  this->obj.y_pos = rand() % 144 - 20;
   this->obj.x_vel = -(rand() % 4 + 1);
   this->obj.y_vel = 0;
   this->obj.size = rand() % 25 + 5;
 #ifdef PBL_COLOR
+  // 85 - 170 % 1 << 24
   this->color = GColorFromRGB(rand() % 191 + 32, rand() % 191 + 32, rand() % 191 + 32);
 #endif
 }
@@ -33,7 +33,7 @@ void opponent_update(Opponent *this) {
   }
 }
 
-void opponent_draw(Opponent *this, GContext *ctx) {
+void opponent_draw(Opponent *this, Layer *layer, GContext *ctx) {
 #ifdef PBL_COLOR
   graphics_context_set_fill_color(ctx, this->color);
 #else

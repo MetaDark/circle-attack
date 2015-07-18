@@ -1,9 +1,5 @@
 #include "object.h"
 
-void object_init(Object *this, Layer *layer) {
-  this->layer = layer;
-}
-
 void object_update(Object *this) {
   this->y_pos += this->y_vel;
   this->x_pos += this->x_vel;
@@ -33,7 +29,7 @@ int object_collides_rect(Object *this, GRect rect) {
   return collidesX && collidesY;
 }
 
-void object_retain_rect(Object *this, GRect rect) {
+void object_lock_rect(Object *this, GRect rect) {
   if (this->x_pos < 0) {
     this->x_pos = 0;
   } else if (this->x_pos > rect.size.w) {
