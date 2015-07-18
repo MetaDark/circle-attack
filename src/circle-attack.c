@@ -32,7 +32,6 @@ static void timer_callback(void *data) {
   switch (game_state) {
   case GAME_ACTIVE:
     app_timer_register(1000 / 30, timer_callback, NULL);
-    break;
   case GAME_PAUSED:
     break;
   case GAME_OVER:
@@ -47,6 +46,9 @@ static void game_init() {
   opponent_init(&opponent);
   bullet_init(&bullet);
 
+  overlay_close(&overlay);
+
+  points.points = 0;
   points_update(&points, 0);
 
   timer_callback(NULL);
@@ -65,11 +67,10 @@ static void game_pause() {
 static void game_unpause() {
   game_state = GAME_ACTIVE;
   overlay_close(&overlay);
+  timer_callback(NULL);
 }
 
-static void game_update(Layer *layer, GContext *ctx) {
-  GRect bounds = layer_get_bounds(layer);
-
+static void game_update(GRect bounds) {
   // Update positions of objects
   player_update(&player);
   opponent_update(&opponent);
@@ -108,7 +109,9 @@ static void game_update(Layer *layer, GContext *ctx) {
   if (player.health <= 0) {
     game_over();
   }
+}
 
+static void game_draw(Layer *layer, GContext *ctx) {
   // Draw objects
   player_draw(&player, layer, ctx);
   opponent_draw(&opponent, layer, ctx);
@@ -119,15 +122,18 @@ static void game_update(Layer *layer, GContext *ctx) {
 }
 
 static void render_layer_update_callback(Layer *layer, GContext *ctx) {
+  GRect bounds;
   switch (game_state) {
   case GAME_ACTIVE:
-    game_update(layer, ctx);
-    break;
+    bounds = layer_get_bounds(layer);
+    game_update(bounds);
   case GAME_PAUSED:
+    game_draw(layer, ctx);
     break;
   case GAME_OVER:
     break;
   }
+
 }
 
 static void click_back_handler(ClickRecognizerRef recognizer, void *ctx) {
