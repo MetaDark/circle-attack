@@ -39,7 +39,11 @@ void player_health_update(Player *this, int delta) {
 void player_health_draw(Player *this, Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
 
+#ifdef PBL_COLOR
   graphics_context_set_fill_color(ctx, GColorWhite);
+#else
+  graphics_context_set_fill_color(ctx, GColorBlack);
+#endif
   graphics_fill_rect(ctx, (GRect) {
       .origin = { 4, 4 },
       .size = { bounds.size.w - 8, 12}

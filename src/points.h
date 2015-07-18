@@ -5,7 +5,7 @@
 
 #ifdef PBL_COLOR
 #define POINTS_TEXT_COLOR GColorWhite
-#define POINTS_BACKGROUND_COLOR GColorWindsorTan
+#define POINTS_BACKGROUND_COLOR GColorDarkGray
 #else
 #define POINTS_TEXT_COLOR GColorBlack
 #define POINTS_BACKGROUND_COLOR GColorWhite
