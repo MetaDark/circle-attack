@@ -1,7 +1,5 @@
 #include "player.h"
 
-#include "color-polyfill.h"
-
 void player_init(Player *this) {
   this->health = 100;
   this->obj.x_pos = 0;
@@ -17,7 +15,7 @@ void player_update(Player *this) {
 
 void player_draw(Player *this, Layer *layer, GContext *ctx) {
   // Draw the three circles
-  graphics_context_set_fill_color(ctx, GColorPictonBlue);
+  graphics_context_set_fill_color(ctx, PLAYER_COLOR);
   graphics_fill_circle(ctx, GPoint(this->obj.x_pos, this->obj.y_pos), this->obj.size);
 
   graphics_context_set_fill_color(ctx, GColorBlack);
@@ -27,7 +25,7 @@ void player_draw(Player *this, Layer *layer, GContext *ctx) {
   graphics_fill_circle(ctx, GPoint(this->obj.x_pos, this->obj.y_pos), this->obj.size / 4);
 
   // Draw the cannon
-  graphics_context_set_fill_color(ctx, GColorPictonBlue);
+  graphics_context_set_fill_color(ctx, PLAYER_COLOR);
   graphics_fill_rect(ctx, (GRect) {
       .origin = { this->obj.x_pos + this->obj.size, this->obj.y_pos - 5 },
       .size = { 5, 10 }
@@ -47,6 +45,7 @@ void player_health_draw(Player *this, Layer *layer, GContext *ctx) {
       .size = { bounds.size.w - 8, 12}
   }, 0, GCornerNone);
 
+#ifdef PBL_COLOR
   if (this->health > 66) {
     graphics_context_set_fill_color(ctx, GColorIslamicGreen);
   } else if (this->health > 33) {
@@ -54,6 +53,9 @@ void player_health_draw(Player *this, Layer *layer, GContext *ctx) {
   } else {
     graphics_context_set_fill_color(ctx, GColorDarkCandyAppleRed);
   }
+#else
+  graphics_context_set_fill_color(ctx, GColorWhite);
+#endif
 
   graphics_fill_rect(ctx, (GRect) {
       .origin = { 5, 5 },

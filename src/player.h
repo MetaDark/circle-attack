@@ -1,7 +1,14 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+#include <pebble.h>
 #include "object.h"
+
+#ifdef PBL_COLOR
+#define PLAYER_COLOR GColorPictonBlue
+#else
+#define PLAYER_COLOR GColorWhite
+#endif
 
 typedef struct Player {
   Object obj;

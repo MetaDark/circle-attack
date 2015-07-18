@@ -133,7 +133,6 @@ static void render_layer_update_callback(Layer *layer, GContext *ctx) {
   case GAME_OVER:
     break;
   }
-
 }
 
 static void click_back_handler(ClickRecognizerRef recognizer, void *ctx) {
