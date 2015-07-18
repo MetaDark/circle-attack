@@ -1,6 +1,7 @@
 #include <pebble.h>
 #include <stdio.h>
 
+#include "background.h"
 #include "overlay.h"
 #include "points.h"
 
@@ -19,6 +20,7 @@ enum {
 static Window *window;
 static Layer *render_layer;
 
+static Background background;
 static Overlay overlay;
 static Points points;
 
@@ -31,10 +33,9 @@ static void timer_callback(void *data) {
 
   switch (game_state) {
   case GAME_ACTIVE:
+  case GAME_OVER:
     app_timer_register(1000 / 30, timer_callback, NULL);
   case GAME_PAUSED:
-    break;
-  case GAME_OVER:
     break;
   }
 }
@@ -42,14 +43,14 @@ static void timer_callback(void *data) {
 static void game_init() {
   game_state = GAME_ACTIVE;
 
-  player_init(&player);
-  opponent_init(&opponent);
-  bullet_init(&bullet);
-
   overlay_close(&overlay);
 
   points.points = 0;
   points_update(&points, 0);
+
+  player_init(&player);
+  opponent_init(&opponent);
+  bullet_init(&bullet);
 
   timer_callback(NULL);
 }
@@ -122,6 +123,9 @@ static void game_draw(Layer *layer, GContext *ctx) {
 }
 
 static void render_layer_update_callback(Layer *layer, GContext *ctx) {
+  background_update(&background);
+  background_draw(&background, layer, ctx);
+
   GRect bounds;
   switch (game_state) {
   case GAME_ACTIVE:
@@ -196,6 +200,7 @@ static void window_load(Window *window) {
   layer_set_update_proc(render_layer, render_layer_update_callback);
   layer_add_child(window_layer, render_layer);
 
+  background_init(&background);
   points_init(&points, window_layer);
   overlay_init(&overlay, render_layer);
 

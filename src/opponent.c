@@ -8,7 +8,7 @@ void opponent_respawn(Opponent *this) {
   // HARD CODED HACK
   this->dying = 0;
   this->obj.x_pos = 144 + 24;
-  this->obj.y_pos = rand() % 144 - 20;
+  this->obj.y_pos = rand() % 148;
   this->obj.x_vel = -(rand() % 4 + 1);
   this->obj.y_vel = 0;
   this->obj.size = rand() % 25 + 5;
