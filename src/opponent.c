@@ -5,6 +5,7 @@ void opponent_init(Opponent *this) {
 }
 
 void opponent_respawn(Opponent *this) {
+  // HARD CODED HACK
   this->dying = 0;
   this->obj.x_pos = 144 + 24;
   this->obj.y_pos = rand() % 144 - 20;

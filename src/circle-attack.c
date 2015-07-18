@@ -4,6 +4,7 @@
 #include "player.h"
 #include "opponent.h"
 #include "bullet.h"
+#include "overlay.h"
 
 #define ARRAYSIZE(x) (sizeof(x)/sizeof(*x))
 #define BACKGROUND_COLOR GColorBlack
@@ -17,39 +18,12 @@ enum {
 static Window *window;
 static Layer *render_layer;
 
+static Overlay overlay;
+// static Points points;
+
 static Player player;
 static Opponent opponent;
 static Bullet bullet;
-
-TextLayer *overlay_text_layer;
-
-static void overlay_open(const char * text) {
-  GRect game_bounds = layer_get_bounds(render_layer);
-
-  overlay_text_layer = text_layer_create((GRect) {
-      .origin = { 0, game_bounds.size.h / 2 - 20 },
-      .size = { game_bounds.size.w, 20 }
-  });
-
-  text_layer_set_text(overlay_text_layer, text);
-  text_layer_set_text_alignment(overlay_text_layer, GTextAlignmentCenter);
-
-#ifdef PBL_COLOR
-  text_layer_set_text_color(overlay_text_layer, GColorWhite);
-  text_layer_set_background_color(overlay_text_layer, GColorDarkCandyAppleRed);
-#else
-  text_layer_set_text_color(overlay_text_layer, GColorBlack);
-  text_layer_set_background_color(overlay_text_layer, GColorWhite);
-#endif
-
-  layer_add_child(render_layer, text_layer_get_layer(overlay_text_layer));
-}
-
-static void overlay_close() {
-  if (overlay_text_layer) {
-    text_layer_destroy(overlay_text_layer);
-  }
-}
 
 // Singleton for simplicity
 struct {
@@ -84,7 +58,6 @@ static void game_init() {
   opponent_init(&opponent);
   bullet_init(&bullet);
 
-  overlay_close();
   points.points = 0;
   points_update(0);
 
@@ -93,17 +66,17 @@ static void game_init() {
 
 static void game_over() {
   game_state = GAME_OVER;
-  overlay_open("GAME OVER");
+  overlay_open(&overlay, "GAME OVER");
 }
 
 static void game_pause() {
   game_state = GAME_PAUSED;
-  overlay_open("PAUSED");
+  overlay_open(&overlay, "PAUSED");
 }
 
 static void game_unpause() {
   game_state = GAME_ACTIVE;
-  overlay_close();
+  overlay_close(&overlay);
 }
 
 static void game_update(Layer *layer, GContext *ctx) {
@@ -224,8 +197,8 @@ static void window_load(Window *window) {
 
   // Initialize the render layer
   render_layer = layer_create((GRect) {
-      .origin = { 5, 5 },
-      .size = { window_bounds.size.w - 10, window_bounds.size.h - 30 }
+      .origin = { 0, 0 },
+      .size = { window_bounds.size.w, window_bounds.size.h - 20 }
   });
   layer_set_update_proc(render_layer, render_layer_update_callback);
   layer_add_child(window_layer, render_layer);
@@ -250,12 +223,13 @@ static void window_load(Window *window) {
 
   layer_add_child(window_layer, text_layer_get_layer(points.text_layer));
 
+  overlay_init(&overlay, render_layer);
   game_init();
 }
 
 static void window_unload(Window *window) {
-  overlay_close();
   text_layer_destroy(points.text_layer);
+  overlay_deinit(&overlay);
   layer_destroy(render_layer);
 }
 

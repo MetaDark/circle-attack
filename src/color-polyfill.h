@@ -1,7 +1,7 @@
 #ifndef COLOR_POLYFILL_H
 #define COLOR_POLYFILL_H
 
-#include "pebble.h"
+#include <pebble.h>
 
 #ifndef GColorPictonBlue
 #define GColorPictonBlue GColorWhite

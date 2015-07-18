@@ -1,7 +1,7 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
-#include "pebble.h"
+#include <pebble.h>
 
 typedef struct Object {
   int x_pos;

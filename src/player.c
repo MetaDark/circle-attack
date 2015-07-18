@@ -5,7 +5,7 @@
 void player_init(Player *this) {
   this->health = 100;
   this->obj.x_pos = 0;
-  this->obj.y_pos = 84;
+  this->obj.y_pos = 84; // HARD CODED HACK
   this->obj.x_vel = 0;
   this->obj.y_vel = 0;
   this->obj.size = 20;
