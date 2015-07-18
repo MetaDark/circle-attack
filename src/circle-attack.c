@@ -1,12 +1,12 @@
 #include <pebble.h>
 #include <stdio.h>
 
-#include "utils.h"
+#include "overlay.h"
+#include "points.h"
 
 #include "player.h"
 #include "opponent.h"
 #include "bullet.h"
-#include "overlay.h"
 
 #define BACKGROUND_COLOR GColorBlack
 
@@ -20,23 +20,11 @@ static Window *window;
 static Layer *render_layer;
 
 static Overlay overlay;
-// static Points points;
+static Points points;
 
 static Player player;
 static Opponent opponent;
 static Bullet bullet;
-
-// Singleton for simplicity
-struct {
-  int points;
-  char text[15];
-  TextLayer *text_layer;
-} points;
-
-static void points_update(int delta) {
-  points.points += delta;
-  snprintf(points.text, ARRAYSIZE(points.text), "Points: %i", points.points);
-}
 
 static void timer_callback(void *data) {
   layer_mark_dirty(render_layer);
@@ -59,8 +47,7 @@ static void game_init() {
   opponent_init(&opponent);
   bullet_init(&bullet);
 
-  points.points = 0;
-  points_update(0);
+  points_update(&points, 0);
 
   timer_callback(NULL);
 }
@@ -93,7 +80,7 @@ static void game_update(Layer *layer, GContext *ctx) {
 
   // Opponent passes through left side of screen
   if (opponent.obj.x_pos + opponent.obj.size < 0) {
-    points_update(-1);
+    points_update(&points, -1);
     opponent_respawn(&opponent);
     vibes_short_pulse();
   }
@@ -107,7 +94,7 @@ static void game_update(Layer *layer, GContext *ctx) {
 
   // Bullet hits opponent
   if (object_collides(&bullet.obj, &opponent.obj)) {
-    points_update(1);
+    points_update(&points, 1);
     bullet_hide(&bullet);
     opponent_kill(&opponent);
   }
@@ -204,30 +191,14 @@ static void window_load(Window *window) {
   layer_set_update_proc(render_layer, render_layer_update_callback);
   layer_add_child(window_layer, render_layer);
 
-  // Initialize the points text layer
-  points.text_layer = text_layer_create((GRect) {
-      .origin = { 0, window_bounds.size.h - 20 },
-      .size = { window_bounds.size.w, 20 }
-  });
-  text_layer_set_text(points.text_layer, points.text);
-  text_layer_set_text_alignment(points.text_layer, GTextAlignmentCenter);
-
-#ifdef PBL_COLOR
-  text_layer_set_text_color(points.text_layer, GColorWhite);
-  text_layer_set_background_color(points.text_layer, GColorWindsorTan);
-#else
-  text_layer_set_text_color(points.text_layer, GColorBlack);
-  text_layer_set_background_color(points.text_layer, GColorWhite);
-#endif
-
-  layer_add_child(window_layer, text_layer_get_layer(points.text_layer));
-
+  points_init(&points, window_layer);
   overlay_init(&overlay, render_layer);
-  game_init();
+
+  game_init(window);
 }
 
 static void window_unload(Window *window) {
-  text_layer_destroy(points.text_layer);
+  points_deinit(&points);
   overlay_deinit(&overlay);
   layer_destroy(render_layer);
 }

@@ -3,10 +3,6 @@
 
 #include <pebble.h>
 
-typedef struct {
-  TextLayer *text_layer;
-} Overlay;
-
 #ifdef PBL_COLOR
 #define OVERLAY_TEXT_COLOR GColorWhite
 #define OVERLAY_BACKGROUND_COLOR GColorDarkCandyAppleRed
@@ -14,6 +10,10 @@ typedef struct {
 #define OVERLAY_TEXT_COLOR GColorBlack
 #define OVERLAY_BACKGROUND_COLOR GColorWhite
 #endif
+
+typedef struct {
+  TextLayer *text_layer;
+} Overlay;
 
 void overlay_init(Overlay *this, Layer *parent);
 void overlay_deinit(Overlay *this);
