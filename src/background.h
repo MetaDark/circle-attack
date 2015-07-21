@@ -4,7 +4,7 @@
 #include "streak.h"
 
 typedef struct Background {
-  Streak streaks[7];
+  Streak streaks[10];
 } Background;
 
 void background_init(Background *this);
